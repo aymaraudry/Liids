@@ -53,7 +53,6 @@ export default function DashboardPage() {
 
   useEffect(() => {
     loadData()
-    // Auto-refresh every 15s when a run is active
     const interval = setInterval(() => {
       if (running) loadData()
     }, 15000)
@@ -90,28 +89,25 @@ export default function DashboardPage() {
 
   async function handleEnrichBatch() {
     toast.info('Running enrichment batch...')
-    const res = await fetch('/api/cron/enrich-batch', {
-      headers: { Authorization: `Bearer ${process.env.NEXT_PUBLIC_CRON_SECRET ?? 'missing'}` },
-    })
+    const res = await fetch('/api/pipeline/enrich', { method: 'POST' })
     const data = await res.json()
     if (res.ok) {
       toast.success(`Enriched ${data.processed} companies, found ${data.contactsFound} contacts`)
       await loadData()
     } else {
-      toast.error('Enrichment batch failed')
+      toast.error(data.error ?? 'Enrichment batch failed')
     }
   }
 
   const statCards = [
     { label: 'Companies Found', value: stats?.companies ?? 0, icon: Building2, color: 'text-blue-500' },
-    { label: 'Contacts Found',  value: stats?.contacts ?? 0, icon: Users,     color: 'text-green-500' },
-    { label: 'Leads Approved',  value: stats?.leads ?? 0,    icon: Activity,  color: 'text-purple-500' },
-    { label: 'Emails Sent',     value: stats?.sent ?? 0,     icon: Mail,      color: 'text-orange-500' },
+    { label: 'Contacts Found',  value: stats?.contacts ?? 0,  icon: Users,     color: 'text-green-500' },
+    { label: 'Leads Approved',  value: stats?.leads ?? 0,     icon: Activity,  color: 'text-purple-500' },
+    { label: 'Emails Sent',     value: stats?.sent ?? 0,      icon: Mail,      color: 'text-orange-500' },
   ]
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
@@ -143,7 +139,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map(({ label, value, icon: Icon, color }) => (
           <Card key={label}>
@@ -158,7 +153,6 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Run Logs */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-medium">Pipeline Run Logs</CardTitle>
@@ -167,11 +161,10 @@ export default function DashboardPage() {
           {logs.length === 0 ? (
             <div className="py-6 text-center text-sm text-muted-foreground space-y-2">
               <p>No pipeline runs yet.</p>
-              <p className="text-xs">Make sure you've added your <strong>Meta Ad Library</strong> key in API Keys, then click <strong>Run Pipeline</strong>.</p>
+              <p className="text-xs">Add your <strong>Meta Ad Library</strong> key in API Keys, then click <strong>Run Pipeline</strong>.</p>
             </div>
           ) : logs.map(log => (
             <div key={log.id} className="border rounded-lg overflow-hidden">
-              {/* Log header row */}
               <button
                 className="w-full flex items-center justify-between p-3 hover:bg-muted/40 transition-colors text-left"
                 onClick={() => setExpandedLog(expandedLog === log.id ? null : log.id)}
@@ -208,7 +201,6 @@ export default function DashboardPage() {
                 }
               </button>
 
-              {/* Expanded error details */}
               {expandedLog === log.id && (
                 <div className="border-t bg-muted/20 p-3 space-y-2">
                   <div className="grid grid-cols-3 gap-4 text-xs pb-2">
@@ -235,7 +227,6 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Quick links */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium">Setup Checklist</CardTitle>
