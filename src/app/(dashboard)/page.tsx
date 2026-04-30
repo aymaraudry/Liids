@@ -66,8 +66,8 @@ export default function DashboardPage() {
       const res = await fetch('/api/pipeline/run', { method: 'POST' })
       const data = await res.json()
       if (res.ok) {
-        toast.success('Pipeline started — check run logs below')
-        setTimeout(loadData, 3000)
+        toast.success('Pipeline started — discovery + first enrichment batch running')
+        setTimeout(loadData, 5000)
       } else {
         toast.error(data.error ?? 'Failed to start pipeline')
         setRunning(false)
@@ -75,6 +75,30 @@ export default function DashboardPage() {
     } catch {
       toast.error('Network error')
       setRunning(false)
+    }
+  }
+
+  async function handleReset() {
+    const res = await fetch('/api/pipeline/reset', { method: 'POST' })
+    const data = await res.json()
+    if (res.ok) {
+      toast.success(data.message)
+      setRunning(false)
+      await loadData()
+    }
+  }
+
+  async function handleEnrichBatch() {
+    toast.info('Running enrichment batch...')
+    const res = await fetch('/api/cron/enrich-batch', {
+      headers: { Authorization: `Bearer ${process.env.NEXT_PUBLIC_CRON_SECRET ?? 'missing'}` },
+    })
+    const data = await res.json()
+    if (res.ok) {
+      toast.success(`Enriched ${data.processed} companies, found ${data.contactsFound} contacts`)
+      await loadData()
+    } else {
+      toast.error('Enrichment batch failed')
     }
   }
 
@@ -97,10 +121,18 @@ export default function DashboardPage() {
             Schedule: <span className="font-medium text-foreground">{stats?.schedule ?? 'manual'}</span>
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button variant="outline" size="sm" onClick={loadData} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
+          </Button>
+          {running && (
+            <Button variant="outline" size="sm" onClick={handleReset} className="text-destructive border-destructive hover:bg-destructive/10">
+              Reset Stuck Run
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={handleEnrichBatch} disabled={running}>
+            Enrich Batch
           </Button>
           <Button onClick={handleRun} disabled={running} size="sm">
             {running
