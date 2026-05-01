@@ -1,0 +1,20 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/run-pipeline",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/enrich-batch",
+      "schedule": "*/30 6-18 * * *"
+    },
+    {
+      "path": "/api/cron/process-sequences",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/warmup",
+      "schedule": "0 7 * * *"
+    }
+  ]
+}
